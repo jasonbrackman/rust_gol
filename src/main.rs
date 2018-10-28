@@ -35,7 +35,7 @@ pub struct Cell {
 }
 
 pub struct Board {
-    contents: [[Cell;20];20]
+    contents: [[Cell;80];40]
 }
 
 impl Board {
@@ -44,7 +44,7 @@ impl Board {
 
         let options = [true, false, false];
 
-        let cells =  [ [Cell{alive: false}; 20]; 20 ];
+        let cells =  [ [Cell{alive: false}; 80]; 40 ];
 
         let mut board = Board {contents: cells};
 
@@ -61,9 +61,10 @@ impl Board {
         board
     }
 
-    fn display(&self) -> () {
+    fn display(&self, delay:u64) -> () {
         /* print the board to screen */
 
+        Board::delay(delay);
         Board::clear();
 
         // format and print out all the rows fo the board
@@ -76,9 +77,8 @@ impl Board {
                     true => row.push_str("█"),
                     false => row.push_str(" "),
                 };
-                row.push_str(" | ");
             }
-            println!("| {}\n", row);
+            println!("{}", row);
         }
     }
 
@@ -173,11 +173,14 @@ impl Board {
 
 fn main() {
     let mut b = Board::create();
-    Board::delay(4000);
+
+    // uncomment to pause before starting for animated gif recording
+    // Board::delay(8000);
+
     for index in 0..1000 {
-        b.display();
+        b.display(85);
         println!("Iteration: {}", index);
-        Board::delay(100);
         b = b.tick();
+
     }
 }
