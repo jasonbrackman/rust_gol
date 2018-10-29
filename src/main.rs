@@ -49,7 +49,7 @@ impl Board {
     }
 
     fn init_cells(&mut self) {
-        let options = [1, 0, 0];
+        let options = [1, 0, 0, 0, 0, 0];
 
         for x in 0..self.contents.len() {
             let y_value = self.contents[x];
@@ -62,11 +62,12 @@ impl Board {
         }
     }
 
-    fn display(&self, delay:u64) -> () {
+    fn display(&self, delay:u64, story:&[&str; 4]) -> () {
         /* print the board to screen */
 
         Board::delay(delay);
         Board::clear();
+
 
         // format and print out all the rows fo the board
         for x in 0..self.contents.len() {
@@ -77,10 +78,10 @@ impl Board {
             for y in 0..y_value.len() {
                 match self.contents[x][y].alive {
                     0 => row.push_str(" "),
-                    1...2 => row.push_str("🥚"), // new born
-                    3...4 => row.push_str("🐣"), // middle age
-                    5...6 => row.push_str("🐥"), // oooold "░"
-                    _ => row.push_str("🐓")
+                    1...5 => row.push_str(story[0]),  // new born
+                    5...10 => row.push_str(story[1]), // middle age
+                    11...18 => row.push_str(story[2]), // oooold
+                    _ => row.push_str(story[3])
                 };
             }
             println!("{}", row);
@@ -88,15 +89,12 @@ impl Board {
     }
 
     fn clear() {
-        // clear current screen
-        // println!("\x1B[m");
-        // println!("{}[2J", 27 as char);
+        /* clear current screen */
         println!("{}c", 27 as char);
     }
 
     fn count_living_neighbours(&self, x:usize, y:usize) -> i32 {
         let mut result = 0;
-
 
         // Deal with previous row
         if x > 0 {
@@ -115,6 +113,9 @@ impl Board {
         if y > 0 {
             if self.contents[x][y-1].alive > 0 {result += 1};
         }
+
+        // skip current cell
+
         if y+1 < self.contents[x].len() {
             if self.contents[x][y+1].alive > 0 {result += 1};
         }
@@ -135,7 +136,7 @@ impl Board {
         result
     }
 
-    pub fn tick(&self) -> Board {
+    fn tick(&self) -> Board {
         /*
         Trigger the rules of the board for one tick
             - for each cell location:
@@ -154,18 +155,19 @@ impl Board {
         for i in 0..self.contents.len() {
             for j in 0..self.contents[i].len() {
 
+                let alive_for = self.contents[i][j].alive;
+
                 let result = self.count_living_neighbours(i, j);
                 match result {
                     0 | 1 => new_board.contents[i][j].alive = 0,
                     2 => {
-                        let alive_for = self.contents[i][j].alive;
                         if alive_for > 0 {
                             new_board.contents[i][j].alive = alive_for + 1
                         } else {
                             new_board.contents[i][j].alive = alive_for
                         }
                     },
-                    3 => new_board.contents[i][j].alive = self.contents[i][j].alive + 1,
+                    3 => new_board.contents[i][j].alive = alive_for + 1,
                     _ => new_board.contents[i][j].alive = 0
                 }
 
@@ -185,15 +187,23 @@ impl Board {
 }
 
 fn main() {
-    let mut b = Board::create();
-    b.init_cells();
+    let mut board = Board::create();
+    board.init_cells();
     // uncomment to pause before starting for animated gif recording
     //Board::delay(8000);
 
+    let stories = [
+                    ["🤕", "😵", "💀", "👻"],
+                    ["🥚", "🐣", "🐥", "🐓"],
+                    ["░", "▒", "▓", "█"]
+        ];
+
+    let story = rand::thread_rng().choose(&stories);
+
     for index in 0..5000 {
-        b.display(100);
+        board.display(85, story.unwrap());
         println!("Iteration: {}", index);
-        b = b.tick();
+        board = board.tick();
 
     }
 }
