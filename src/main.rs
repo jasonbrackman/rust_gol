@@ -31,7 +31,7 @@ use std::{thread, time};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Cell {
-    alive: bool
+    alive: i32
 }
 
 pub struct Board {
@@ -42,23 +42,24 @@ impl Board {
     pub fn create() -> Board {
         /* Create a board populated full of cells */
 
-        let options = [true, false, false];
+        let cells =  [ [Cell{alive: 0}; 80]; 40 ];
 
-        let cells =  [ [Cell{alive: false}; 80]; 40 ];
+        Board {contents: cells}
 
-        let mut board = Board {contents: cells};
+    }
 
-        for x in 0..board.contents.len() {
-            let y_value = board.contents[x];
+    fn init_cells(&mut self) {
+        let options = [1, 0, 0];
+
+        for x in 0..self.contents.len() {
+            let y_value = self.contents[x];
             for y in 0..y_value.len() {
 
                 // randomly choose if the initial state of each cell is alive
-                let random_bool = rand::thread_rng().choose(&options);
-                board.contents[x][y].alive = *random_bool.unwrap();
+                let random_age = rand::thread_rng().choose(&options);
+                self.contents[x][y].alive = *random_age.unwrap();
             }
         }
-
-        board
     }
 
     fn display(&self, delay:u64) -> () {
@@ -70,12 +71,16 @@ impl Board {
         // format and print out all the rows fo the board
         for x in 0..self.contents.len() {
             let y_value = self.contents[x];
+
             // collect all the values and provide any other visuals
             let mut row = "".to_owned();
             for y in 0..y_value.len() {
                 match self.contents[x][y].alive {
-                    true => row.push_str("█"),
-                    false => row.push_str(" "),
+                    0 => row.push_str(" "),
+                    1...2 => row.push_str("🥚"), // new born
+                    3...4 => row.push_str("🐣"), // middle age
+                    5...6 => row.push_str("🐥"), // oooold "░"
+                    _ => row.push_str("🐓")
                 };
             }
             println!("{}", row);
@@ -96,34 +101,34 @@ impl Board {
         // Deal with previous row
         if x > 0 {
             if y > 0 {
-                if self.contents[x-1][y-1].alive == true {result += 1};
+                if self.contents[x-1][y-1].alive > 0 {result += 1};
             }
 
-            if self.contents[x-1][y].alive == true {result += 1}
+            if self.contents[x-1][y].alive > 0 {result += 1}
 
             if y+1 < self.contents[x-1].len() {
-                if self.contents[x-1][y+1].alive == true {result += 1};
+                if self.contents[x-1][y+1].alive > 0 {result += 1};
             }
         }
 
         // current row
         if y > 0 {
-            if self.contents[x][y-1].alive == true {result += 1};
+            if self.contents[x][y-1].alive > 0 {result += 1};
         }
         if y+1 < self.contents[x].len() {
-            if self.contents[x][y+1].alive == true {result += 1};
+            if self.contents[x][y+1].alive > 0 {result += 1};
         }
 
         // next row
         if x+1 < self.contents.len() {
             if y > 0 {
-                if self.contents[x+1][y-1].alive == true {result += 1};
+                if self.contents[x+1][y-1].alive > 0 {result += 1};
             }
 
-            if self.contents[x+1][y].alive == true {result += 1}
+            if self.contents[x+1][y].alive > 0 {result += 1};
 
             if y+1 < self.contents[x+1].len() {
-                if self.contents[x+1][y+1].alive == true {result += 1};
+                if self.contents[x+1][y+1].alive > 0 {result += 1};
             }
         }
 
@@ -151,11 +156,19 @@ impl Board {
 
                 let result = self.count_living_neighbours(i, j);
                 match result {
-                    0 | 1 => new_board.contents[i][j].alive = false,
-                    2 => new_board.contents[i][j].alive = self.contents[i][j].alive,
-                    3 => new_board.contents[i][j].alive = true,
-                    _ => new_board.contents[i][j].alive = false
+                    0 | 1 => new_board.contents[i][j].alive = 0,
+                    2 => {
+                        let alive_for = self.contents[i][j].alive;
+                        if alive_for > 0 {
+                            new_board.contents[i][j].alive = alive_for + 1
+                        } else {
+                            new_board.contents[i][j].alive = alive_for
+                        }
+                    },
+                    3 => new_board.contents[i][j].alive = self.contents[i][j].alive + 1,
+                    _ => new_board.contents[i][j].alive = 0
                 }
+
                 // println!("Alive: {}, {}: {}", i, j, result);
             }
         }
@@ -173,12 +186,12 @@ impl Board {
 
 fn main() {
     let mut b = Board::create();
-
+    b.init_cells();
     // uncomment to pause before starting for animated gif recording
-    // Board::delay(8000);
+    //Board::delay(8000);
 
-    for index in 0..1000 {
-        b.display(85);
+    for index in 0..5000 {
+        b.display(100);
         println!("Iteration: {}", index);
         b = b.tick();
 
