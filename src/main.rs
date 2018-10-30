@@ -49,7 +49,7 @@ impl Board {
     }
 
     fn init_cells(&mut self) {
-        let options = [1, 0, 0, 0, 0, 0];
+        let options = [1, 0, 0, 1, 0, 0];
 
         for x in 0..self.contents.len() {
             let y_value = self.contents[x];
@@ -90,7 +90,19 @@ impl Board {
 
     fn clear() {
         /* clear current screen */
-        println!("{}c", 27 as char);
+        if cfg!(target_os = "windows") {
+            // This doesn't seem to work as expected on Windows 10.
+            // std::process::Command::new("cls").status().expect("Failed to clear the screen.");
+
+            for _ in 0..10 {
+                println!("\n\n\n\n\n\n\n\n\n\n");
+            }
+
+        } else {
+            std::process::Command::new("clear").status().expect("Failed to clear the screen.");
+        }
+
+       // println!("{}c", 27 as char);
     }
 
     fn count_living_neighbours(&self, x:usize, y:usize) -> i32 {
@@ -195,7 +207,9 @@ fn main() {
     let stories = [
                     ["🤕", "😵", "💀", "👻"],
                     ["🥚", "🐣", "🐥", "🐓"],
-                    ["░", "▒", "▓", "█"]
+                    ["░", "▒", "▓", "█"],
+                    ["°", "°", "°", "°"],
+                    ["∙", "∙", "∙", "∙"]
         ];
 
     let story = rand::thread_rng().choose(&stories);
